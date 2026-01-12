@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile # Pastikan path ke Dockerfile benar
+      dockerfile: Dockerfile 
     container_name: expense_backend
     ports:
       - "8080:8080"
@@ -37,16 +37,15 @@ services:
       DB_TIMEZONE: Asia/Jakarta
     depends_on:
       db:
-        condition: service_healthy # Backend hanya jalan setelah DB sehat
+        condition: service_healthy 
 
-  # Frontend Nuxt.js (Comment dulu jika folder belum ada agar tidak error saat up)
-  # frontend:
-  #   build: ./frontend
-  #   container_name: expense_frontend
-  #   ports:
-  #     - "3000:3000"
-  #   depends_on:
-  #     - backend
+  frontend:
+    build: ./frontend
+    container_name: expense_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
