@@ -6,16 +6,18 @@
           <h2 class="text-2xl font-bold text-gray-800">
             Expense Management
           </h2>
-          <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase mt-1 inline-block">
-            Login sebagai: {{ userRole || 'User' }}
-          </span>
+          <div class="flex items-center gap-2 mt-1">
+            <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-bold uppercase">
+              Role: {{ userRole }}
+            </span>
+          </div>
         </div>
         <div class="flex gap-3">
           <button
             class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition font-medium shadow-sm"
             @click="showModal = true"
           >
-            + Tambah Pengeluaran
+            + Tambah
           </button>
           <button
             class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition font-medium"
@@ -28,8 +30,32 @@
     </div>
 
     <div class="p-8">
-      <div class="max-w-6xl mx-auto bg-white rounded-lg shadow-md overflow-hidden">
-        <div class="overflow-x-auto">
+      <div class="max-w-6xl mx-auto">
+        <div class="mb-4 flex justify-end">
+          <select
+            v-model="filterStatus"
+            class="border rounded-md p-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            @change="fetchExpenses(1)"
+          >
+            <option value="">
+              Semua Status
+            </option>
+            <option value="pending">
+              Pending
+            </option>
+            <option value="auto_approved">
+              Auto Approved
+            </option>
+            <option value="completed">
+              Completed
+            </option>
+            <option value="rejected">
+              Rejected
+            </option>
+          </select>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
           <table class="w-full text-left border-collapse">
             <thead>
               <tr class="bg-gray-50 border-b border-gray-200 text-gray-600 uppercase text-sm">
@@ -70,7 +96,7 @@
                     v-if="item.receipt_url"
                     :href="item.receipt_url"
                     target="_blank"
-                    class="text-blue-500 underline text-xs"
+                    class="text-blue-500 underline text-xs font-bold"
                   >Lihat Bukti</a>
                   <span
                     v-else
@@ -83,29 +109,60 @@
                     class="flex justify-center gap-2"
                   >
                     <button
-                      class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600"
-                      @click="updateStatus(item.id, 'approved')"
+                      class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600 font-bold"
+                      @click="updateStatus(item.id, 'approve')"
                     >
                       Approve
                     </button>
                     <button
-                      class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600"
-                      @click="updateStatus(item.id, 'rejected')"
+                      class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600 font-bold"
+                      @click="updateStatus(item.id, 'reject')"
                     >
                       Reject
                     </button>
                   </div>
                   <span
                     v-else
-                    class="px-2 py-1 rounded text-[10px] font-bold uppercase"
                     :class="getStatusClass(item.status)"
+                    class="px-2 py-1 rounded text-[10px] font-bold uppercase inline-block"
                   >
-                    {{ item.status }}
+                    {{ item.status.replace('_', ' ') }}
                   </span>
+                </td>
+              </tr>
+              <tr v-if="expenseList.length === 0">
+                <td
+                  colspan="5"
+                  class="p-10 text-center text-gray-400 italic"
+                >
+                  Data tidak ditemukan.
                 </td>
               </tr>
             </tbody>
           </table>
+
+          <div class="bg-gray-50 px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            <p class="text-sm text-gray-600">
+              Total: <span class="font-bold">{{ metaData.total }}</span> pengeluaran
+            </p>
+            <div class="flex gap-2">
+              <button
+                :disabled="currentPage === 1"
+                class="px-3 py-1 border rounded bg-white disabled:opacity-50 text-sm"
+                @click="changePage(currentPage - 1)"
+              >
+                Prev
+              </button>
+              <span class="flex items-center px-3 text-sm font-bold">Hal {{ currentPage }}</span>
+              <button
+                :disabled="currentPage >= Math.ceil(metaData.total / metaData.limit)"
+                class="px-3 py-1 border rounded bg-white disabled:opacity-50 text-sm"
+                @click="changePage(currentPage + 1)"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -124,41 +181,48 @@
             <input
               v-model="form.description"
               type="text"
-              class="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
+              class="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
           </div>
           <div class="mb-4">
-            <label class="block text-sm font-medium mb-1">Nominal (IDR)</label>
+            <label class="block text-sm font-medium mb-1">Nominal (Maks 50jt)</label>
             <input
               v-model.number="form.amount"
               type="number"
-              class="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500"
+              :class="{ 'border-red-500': form.amount > 50000000 }"
+              class="w-full border rounded-md p-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm"
               required
             >
+            <p
+              v-if="form.amount > 50000000"
+              class="text-red-500 text-xs mt-1"
+            >
+              Melebihi batas maksimal Rp 50.000.000
+            </p>
           </div>
           <div class="mb-6">
-            <label class="block text-sm font-medium mb-1">Bukti Pembayaran <span class="text-gray-400 font-normal">(Opsional)</span></label>
+            <label class="block text-sm font-medium mb-1 text-xs">Bukti (Opsional)</label>
             <input
               type="file"
-              class="w-full text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+              class="w-full text-xs"
               @change="handleFileUpload"
             >
           </div>
           <div class="flex justify-end gap-2">
             <button
               type="button"
-              class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-md"
+              class="bg-gray-100 px-4 py-2 rounded-md text-sm"
               @click="showModal = false"
             >
               Batal
             </button>
             <button
               type="submit"
-              :disabled="submitting"
-              class="bg-blue-600 text-white px-4 py-2 rounded-md disabled:opacity-50"
+              :disabled="submitting || form.amount > 50000000"
+              class="bg-blue-600 text-white px-4 py-2 rounded-md text-sm disabled:opacity-50"
             >
-              {{ submitting ? 'Menyimpan...' : 'Simpan' }}
+              {{ submitting ? 'Proses...' : 'Simpan' }}
             </button>
           </div>
         </form>
@@ -169,72 +233,102 @@
 
 <script setup>
 const expenseList = ref([])
-const tokenCookie = useCookie('auth_token')
-const userRole = useCookie('user_role')
+const metaData = ref({ total: 0, page: 1, limit: 10 })
+const currentPage = ref(1)
+const filterStatus = ref('')
 const showModal = ref(false)
 const submitting = ref(false)
 
-const form = ref({
-  description: '',
-  amount: 0,
-  receipt: null // Untuk menyimpan file bukti
-})
+const tokenCookie = useCookie('auth_token')
+const userId = useCookie('user_id')
+const userRole = useCookie('user_role')
+
+const form = ref({ description: '', amount: 0, receipt: null, receipt_url: null })
+
+const fetchExpenses = async (page = 1) => {
+  try {
+    const url = `http://localhost:8080/api/expenses?page=${page}&limit=10&status=${filterStatus.value}`
+
+    const res = await $fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${tokenCookie.value}`,
+        'X-User-ID': userId.value || 1,
+        'X-User-Role': userRole.value || 'employee'
+      }
+    })
+
+    if (res) {
+      expenseList.value = res.data || []
+      metaData.value = res.meta || { total: 0, page: 1, limit: 10 }
+      currentPage.value = res.meta?.page || page
+    }
+  } catch (err) {
+    console.error('Fetch Error:', err)
+  }
+}
+
+const changePage = (newPage) => {
+  const maxPage = Math.ceil(metaData.value.total / metaData.value.limit)
+  if (newPage > 0 && newPage <= maxPage) fetchExpenses(newPage)
+}
 
 const handleFileUpload = (event) => {
   const file = event.target.files[0]
-  form.value.receipt = file
+  if (file) {
+    form.value.receipt_url = URL.createObjectURL(file)
+    form.value.receipt = file
+  }
 }
 
 const submitExpense = async () => {
-  // Validasi minimal nominal di frontend agar tidak kena error 422 dari Go
-  if (form.value.amount < 10000) {
-    alert('Minimal pengeluaran adalah Rp 10.000')
-    return
-  }
-
+  if (form.value.amount < 10000) return alert('Min Rp 10.000')
   submitting.value = true
   try {
-    // KIRIM SEBAGAI JSON (Bukan FormData)
-    const payload = {
-      description: form.value.description,
-      amount: Number(form.value.amount), // Wajib number agar tidak error Decode di Go
-      user_id: 1 // Sesuaikan dengan logika ID user kamu jika perlu
-    }
-
     await $fetch('http://localhost:8080/api/expenses', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${tokenCookie.value}`,
         'Content-Type': 'application/json'
       },
-      body: payload
+      body: {
+        description: form.value.description,
+        amount: Number(form.value.amount)
+      }
     })
-
-    alert('Pengeluaran berhasil disimpan!')
     showModal.value = false
-    form.value = { description: '', amount: 0, receipt: null } // Reset
-    await fetchExpenses() // Refresh tabel
+    form.value = { description: '', amount: 0, receipt: null, receipt_url: null }
+    await fetchExpenses(1)
   } catch (err) {
-    const errorMsg = err.data?.message || err.message
-    alert('Gagal simpan: ' + errorMsg)
+    alert(err.data?.error || 'Gagal menyimpan')
   } finally {
     submitting.value = false
   }
 }
 
-const fetchExpenses = async () => {
+const updateStatus = async (id, action) => {
+  if (!confirm(`Konfirmasi ${action}?`)) return
   try {
-    const res = await $fetch('http://localhost:8080/api/expenses', {
+    await $fetch(`http://localhost:8080/api/expenses/${id}/${action}`, {
+      method: 'PUT',
       headers: { Authorization: `Bearer ${tokenCookie.value}` }
     })
-    if (res && res.data) expenseList.value = res.data
-  } catch (err) { console.error(err) }
+    await fetchExpenses(currentPage.value)
+  } catch (err) {
+    alert('Gagal update')
+  }
 }
 
-const getStatusClass = s => s === 'pending' ? 'bg-orange-100 text-orange-600' : s === 'rejected' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'
 const formatRupiah = v => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(v)
-const logout = () => { tokenCookie.value = null; userRole.value = null; window.location.href = '/' }
-const updateStatus = async (id, s) => { /* logic update status */ }
+const getStatusClass = (s) => {
+  if (s === 'pending') return 'bg-orange-100 text-orange-600'
+  if (s === 'rejected') return 'bg-red-100 text-red-600'
+  return 'bg-green-100 text-green-600'
+}
+const logout = () => {
+  tokenCookie.value = null
+  userRole.value = null
+  window.location.href = '/'
+}
 
-onMounted(fetchExpenses)
+onMounted(() => fetchExpenses(1))
 </script>

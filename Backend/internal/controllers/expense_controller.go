@@ -42,6 +42,14 @@ func (c *expenseController) Create(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	val := r.Context().Value(middleware.UserKey)
+	if user, ok := val.(middleware.AuthUser); ok {
+		exp.UserID = user.ID
+	} else {
+		c.renderError(w, "Unauthorized: User ID not found in context", http.StatusUnauthorized)
+		return
+	}
+
 	res, err := c.svc.Submit(&exp)
 	if err != nil {
 		c.renderError(w, err.Error(), http.StatusUnprocessableEntity)
@@ -65,7 +73,11 @@ func (c *expenseController) Create(w http.ResponseWriter, r *http.Request) {
 // @Router /api/expenses [get]
 func (c *expenseController) HandleList(w http.ResponseWriter, r *http.Request) {
 	val := r.Context().Value(middleware.UserKey)
-	user := val.(middleware.AuthUser)
+	user, ok := val.(middleware.AuthUser)
+	if !ok {
+		c.renderError(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	status := r.URL.Query().Get("status")
 	limit, _ := strconv.Atoi(r.URL.Query().Get("limit"))
@@ -88,7 +100,11 @@ func (c *expenseController) HandleList(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"data": expenses,
-		"meta": map[string]interface{}{"total": total, "page": page, "limit": limit},
+		"meta": map[string]interface{}{
+			"total": total,
+			"page":  page,
+			"limit": limit,
+		},
 	})
 }
 
@@ -125,7 +141,11 @@ func (c *expenseController) GetDetail(w http.ResponseWriter, r *http.Request) {
 // @Router /api/expenses/{id}/approve [put]
 func (c *expenseController) Approve(w http.ResponseWriter, r *http.Request) {
 	id := c.parseID(r.URL.Path)
-	if err := c.svc.Approve(id, 2, "Approved via API"); err != nil {
+
+	val := r.Context().Value(middleware.UserKey)
+	user := val.(middleware.AuthUser)
+
+	if err := c.svc.Approve(id, user.ID, "Approved via API"); err != nil {
 		c.renderError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}

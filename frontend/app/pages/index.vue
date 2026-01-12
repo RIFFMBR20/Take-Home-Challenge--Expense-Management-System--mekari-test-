@@ -78,21 +78,23 @@ const toast = useToast()
 const handleLogin = async () => {
   loading.value = true
   try {
-  // Tembak LANGSUNG ke port Go
     const response = await $fetch('http://localhost:8080/api/auth/login', {
       method: 'POST',
       body: { email: email.value, password: password.value }
     })
 
+    // Simpan Cookie
     const token = useCookie('auth_token', { path: '/' })
     const role = useCookie('user_role', { path: '/' })
+    const userId = useCookie('user_id', { path: '/' })
+
     token.value = response.token
     role.value = response.role
+    userId.value = response.user_id
 
     window.location.href = '/dashboard'
   } catch (err) {
-    console.error('Detail Error:', err)
-    toast.add({ title: 'Error', description: 'Cek terminal Go, ada request masuk gak?', color: 'red' })
+    toast.add({ title: 'Gagal Login', description: 'Email atau password salah', color: 'red' })
   } finally {
     loading.value = false
   }

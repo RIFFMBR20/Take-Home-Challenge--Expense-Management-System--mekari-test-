@@ -24,4 +24,5 @@ type Expense struct {
 	AutoApproved     bool          `json:"auto_approved"`
 	SubmittedAt      time.Time     `gorm:"autoCreateTime" json:"submitted_at"`
 	ProcessedAt      *time.Time    `json:"processed_at,omitempty"`
+	Approvals        []Approval    `gorm:"foreignKey:ExpenseID" json:"approvals,omitempty"`
 }

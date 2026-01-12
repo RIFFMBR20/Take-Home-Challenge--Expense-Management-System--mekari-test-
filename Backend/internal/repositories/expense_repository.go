@@ -1,17 +1,17 @@
 package repositories
 
 import (
-	models2 "backend-test-mekari/internal/models"
+	model "backend-test-mekari/internal/models"
 
 	"gorm.io/gorm"
 )
 
 type ExpenseRepository interface {
-	Create(expense *models2.Expense) error
-	FindByID(id uint) (*models2.Expense, error)
-	FindAll(userID uint, role string, status string, limit int, offset int) ([]models2.Expense, int64, error)
-	Update(expense *models2.Expense) error
-	CreateApproval(approval *models2.Approval) error
+	Create(expense *model.Expense) error
+	FindByID(id uint) (*model.Expense, error)
+	FindAll(userID uint, role string, status string, limit int, offset int) ([]model.Expense, int64, error)
+	Update(expense *model.Expense) error
+	CreateApproval(approval *model.Approval) error
 }
 
 type expenseRepository struct {
@@ -22,24 +22,27 @@ func NewExpenseRepository(db *gorm.DB) ExpenseRepository {
 	return &expenseRepository{db}
 }
 
-func (r *expenseRepository) Create(exp *models2.Expense) error { return r.db.Create(exp).Error }
+func (r *expenseRepository) Create(exp *model.Expense) error { return r.db.Create(exp).Error }
 
-func (r *expenseRepository) Update(exp *models2.Expense) error { return r.db.Save(exp).Error }
+func (r *expenseRepository) Update(exp *model.Expense) error {
+	return r.db.Model(exp).Select("Status", "ProcessedAt").Updates(exp).Error
+}
 
-func (r *expenseRepository) CreateApproval(app *models2.Approval) error {
+func (r *expenseRepository) CreateApproval(app *model.Approval) error {
 	return r.db.Create(app).Error
 }
 
-func (r *expenseRepository) FindByID(id uint) (*models2.Expense, error) {
-	var exp models2.Expense
+func (r *expenseRepository) FindByID(id uint) (*model.Expense, error) {
+	var exp model.Expense
 	err := r.db.Preload("Approvals").First(&exp, id).Error
 	return &exp, err
 }
 
-func (r *expenseRepository) FindAll(userID uint, role string, status string, limit int, offset int) ([]models2.Expense, int64, error) {
-	var expenses []models2.Expense
+func (r *expenseRepository) FindAll(userID uint, role string, status string, limit int, offset int) ([]model.Expense, int64, error) {
+	var expenses []model.Expense
 	var total int64
-	query := r.db.Model(&models2.Expense{})
+
+	query := r.db.Model(&model.Expense{})
 
 	if role != "manager" {
 		query = query.Where("user_id = ?", userID)
