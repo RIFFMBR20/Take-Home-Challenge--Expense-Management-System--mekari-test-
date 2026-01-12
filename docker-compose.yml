@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Database PostgreSQL
   db:
@@ -22,9 +20,9 @@ services:
   # Backend Golang
   backend:
     build:
-      context: .
+      context: ./Backend
       dockerfile: Dockerfile
-    container_name: expense_backend
+    container_name: testmekari-backend
     ports:
       - "8080:8080"
     environment:
@@ -43,7 +41,7 @@ services:
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile  # <- pastikan file ini ada di folder frontend
+      dockerfile: Dockerfile
     container_name: expense_frontend
     ports:
       - "3000:3000"
