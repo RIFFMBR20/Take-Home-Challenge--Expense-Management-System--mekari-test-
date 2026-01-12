@@ -1,16 +1,34 @@
 definitions:
+  models.Approval:
+    properties:
+      approver:
+        $ref: '#/definitions/models.User'
+      approver_id:
+        type: integer
+      created_at:
+        type: string
+      expense_id:
+        type: integer
+      id:
+        type: integer
+      notes:
+        type: string
+      status:
+        $ref: '#/definitions/models.ExpenseStatus'
+    type: object
   models.Expense:
     properties:
-      amount_idr:
-        description: 'Minimal IDR 10.000 [cite: 24, 63]'
+      amount:
         type: integer
+      approvals:
+        items:
+          $ref: '#/definitions/models.Approval'
+        type: array
       auto_approved:
         type: boolean
       description:
-        description: 'Required field [cite: 26]'
         type: string
       external_id:
-        description: 'Idempotency key [cite: 77]'
         type: string
       id:
         type: integer
@@ -25,6 +43,24 @@ definitions:
       submitted_at:
         type: string
       user_id:
+        type: integer
+    type: object
+  models.ExpenseListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/models.Expense'
+        type: array
+      meta:
+        $ref: '#/definitions/models.ExpensePaginationMeta'
+    type: object
+  models.ExpensePaginationMeta:
+    properties:
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
         type: integer
     type: object
   models.ExpenseStatus:
@@ -59,6 +95,20 @@ definitions:
       user_id:
         type: integer
     type: object
+  models.User:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      role:
+        description: employee, manager
+        type: string
+    type: object
 info:
   contact: {}
   description: API untuk tugas teknis Mekari.
@@ -85,21 +135,31 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
       summary: User Login
       tags:
       - auth
   /api/expenses:
     get:
+      description: Mengambil daftar pengeluaran. Filter otomatis berdasarkan role
+        user.
       parameters:
-      - description: Filter status
+      - description: Filter status (pending, approved, rejected)
         in: query
         name: status
         type: string
-      - description: Limit
+      - default: 10
+        description: Limit data per halaman
         in: query
         name: limit
         type: integer
-      - description: Page
+      - default: 1
+        description: Nomor halaman
         in: query
         name: page
         type: integer
@@ -109,7 +169,12 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
+            $ref: '#/definitions/models.ExpenseListResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
             type: object
       security:
       - BearerAuth: []
@@ -119,6 +184,7 @@ paths:
     post:
       consumes:
       - application/json
+      description: Submit pengeluaran baru oleh employee
       parameters:
       - description: Expense object
         in: body
@@ -133,6 +199,39 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.Expense'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
+        "422":
+          description: Unprocessable Entity
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
       security:
       - BearerAuth: []
       summary: Submit a new expense
@@ -140,6 +239,7 @@ paths:
       - expenses
   /api/expenses/{id}:
     get:
+      description: Mendapatkan detail pengeluaran berdasarkan ID
       parameters:
       - description: Expense ID
         in: path
@@ -151,6 +251,17 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.Expense'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
       security:
       - BearerAuth: []
       summary: Get expense detail
@@ -158,6 +269,7 @@ paths:
       - expenses
   /api/expenses/{id}/approve:
     put:
+      description: Menyetujui pengeluaran (Hanya untuk Manager)
       parameters:
       - description: Expense ID
         in: path
@@ -167,6 +279,28 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
       security:
       - BearerAuth: []
       summary: Approve an expense
@@ -174,6 +308,7 @@ paths:
       - expenses
   /api/expenses/{id}/reject:
     put:
+      description: Menolak pengeluaran (Hanya untuk Manager)
       parameters:
       - description: Expense ID
         in: path
@@ -183,6 +318,28 @@ paths:
       responses:
         "204":
           description: No Content
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              allOf:
+              - type: string
+              - properties:
+                  error:
+                    type: string
+                type: object
+            type: object
       security:
       - BearerAuth: []
       summary: Reject an expense

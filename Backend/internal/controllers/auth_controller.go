@@ -22,6 +22,7 @@ func NewAuthController(as services.AuthService) *AuthController {
 // @Produce json
 // @Param login body models.LoginRequest true "Credentials"
 // @Success 200 {object} models.LoginResponse
+// @Failure 401 {object} map[string]string
 // @Router /api/auth/login [post]
 func (c *AuthController) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var input struct {

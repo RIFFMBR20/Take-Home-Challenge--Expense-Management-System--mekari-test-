@@ -28,12 +28,16 @@ func NewExpenseController(svc services.ExpenseService) ExpenseController {
 
 // Create godoc
 // @Summary Submit a new expense
+// @Description Submit pengeluaran baru oleh employee
 // @Tags expenses
 // @Security BearerAuth
 // @Accept json
 // @Produce json
 // @Param expense body models.Expense true "Expense object"
 // @Success 201 {object} models.Expense
+// @Failure 400 {object} map[string]string{error=string}
+// @Failure 401 {object} map[string]string{error=string}
+// @Failure 422 {object} map[string]string{error=string}
 // @Router /api/expenses [post]
 func (c *expenseController) Create(w http.ResponseWriter, r *http.Request) {
 	var exp models.Expense
@@ -63,13 +67,15 @@ func (c *expenseController) Create(w http.ResponseWriter, r *http.Request) {
 
 // HandleList godoc
 // @Summary Get list of expenses
+// @Description Mengambil daftar pengeluaran. Filter otomatis berdasarkan role user.
 // @Tags expenses
 // @Security BearerAuth
 // @Produce json
-// @Param status query string false "Filter status"
-// @Param limit query int false "Limit"
-// @Param page query int false "Page"
-// @Success 200 {object} map[string]interface{}
+// @Param status query string false "Filter status (pending, approved, rejected)"
+// @Param limit query int false "Limit data per halaman" default(10)
+// @Param page query int false "Nomor halaman" default(1)
+// @Success 200 {object} models.ExpenseListResponse
+// @Failure 401 {object} map[string]string
 // @Router /api/expenses [get]
 func (c *expenseController) HandleList(w http.ResponseWriter, r *http.Request) {
 	val := r.Context().Value(middleware.UserKey)
@@ -110,10 +116,12 @@ func (c *expenseController) HandleList(w http.ResponseWriter, r *http.Request) {
 
 // GetDetail godoc
 // @Summary Get expense detail
+// @Description Mendapatkan detail pengeluaran berdasarkan ID
 // @Tags expenses
 // @Security BearerAuth
 // @Param id path int true "Expense ID"
 // @Success 200 {object} models.Expense
+// @Failure 404 {object} map[string]string{error=string}
 // @Router /api/expenses/{id} [get]
 func (c *expenseController) GetDetail(w http.ResponseWriter, r *http.Request) {
 	id := c.parseID(r.URL.Path)
@@ -134,10 +142,13 @@ func (c *expenseController) GetDetail(w http.ResponseWriter, r *http.Request) {
 
 // Approve godoc
 // @Summary Approve an expense
+// @Description Menyetujui pengeluaran (Hanya untuk Manager)
 // @Tags expenses
 // @Security BearerAuth
 // @Param id path int true "Expense ID"
 // @Success 204 "No Content"
+// @Failure 401 {object} map[string]string{error=string}
+// @Failure 500 {object} map[string]string{error=string}
 // @Router /api/expenses/{id}/approve [put]
 func (c *expenseController) Approve(w http.ResponseWriter, r *http.Request) {
 	id := c.parseID(r.URL.Path)
@@ -154,10 +165,13 @@ func (c *expenseController) Approve(w http.ResponseWriter, r *http.Request) {
 
 // Reject godoc
 // @Summary Reject an expense
+// @Description Menolak pengeluaran (Hanya untuk Manager)
 // @Tags expenses
 // @Security BearerAuth
 // @Param id path int true "Expense ID"
 // @Success 204 "No Content"
+// @Failure 401 {object} map[string]string{error=string}
+// @Failure 500 {object} map[string]string{error=string}
 // @Router /api/expenses/{id}/reject [put]
 func (c *expenseController) Reject(w http.ResponseWriter, r *http.Request) {
 	id := c.parseID(r.URL.Path)

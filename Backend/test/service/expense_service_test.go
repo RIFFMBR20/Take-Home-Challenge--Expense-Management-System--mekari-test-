@@ -17,7 +17,7 @@ func TestExpenseService_Submit(t *testing.T) {
 
 	t.Run("Success Auto Approved (Amount < 1jt)", func(t *testing.T) {
 		expense := &models.Expense{
-			AmountIDR:   500000,
+			Amount:      500000,
 			Description: "Break Fast",
 		}
 
@@ -33,7 +33,7 @@ func TestExpenseService_Submit(t *testing.T) {
 
 	t.Run("Success Pending (Amount >= 1jt)", func(t *testing.T) {
 		expense := &models.Expense{
-			AmountIDR:   2000000,
+			Amount:      2000000,
 			Description: "Buy Monitor",
 		}
 
@@ -50,7 +50,7 @@ func TestExpenseService_Submit(t *testing.T) {
 
 	t.Run("Error Amount Too Low", func(t *testing.T) {
 		expense := &models.Expense{
-			AmountIDR:   5000,
+			Amount:      5000,
 			Description: "Parking",
 		}
 
@@ -63,7 +63,7 @@ func TestExpenseService_Submit(t *testing.T) {
 
 	t.Run("Error Empty Description", func(t *testing.T) {
 		expense := &models.Expense{
-			AmountIDR: 50000,
+			Amount: 50000,
 		}
 
 		result, err := service.Submit(expense)
@@ -79,9 +79,9 @@ func TestExpenseService_Approve(t *testing.T) {
 
 	t.Run("Success Approve", func(t *testing.T) {
 		existingExpense := &models.Expense{
-			ID:        1,
-			Status:    models.StatusPending,
-			AmountIDR: 2000000,
+			ID:     1,
+			Status: models.StatusPending,
+			Amount: 2000000,
 		}
 
 		repo.On("FindByID", uint(1)).Return(existingExpense, nil).Once()

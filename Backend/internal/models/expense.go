@@ -26,3 +26,14 @@ type Expense struct {
 	ProcessedAt      *time.Time    `json:"processed_at,omitempty"`
 	Approvals        []Approval    `gorm:"foreignKey:ExpenseID" json:"approvals,omitempty"`
 }
+
+type ExpensePaginationMeta struct {
+	Total int `json:"total"`
+	Page  int `json:"page"`
+	Limit int `json:"limit"`
+}
+
+type ExpenseListResponse struct {
+	Data []Expense             `json:"data"`
+	Meta ExpensePaginationMeta `json:"meta"`
+}

@@ -23,7 +23,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: Dockerfile 
+      dockerfile: Dockerfile
     container_name: expense_backend
     ports:
       - "8080:8080"
@@ -37,15 +37,17 @@ services:
       DB_TIMEZONE: Asia/Jakarta
     depends_on:
       db:
-        condition: service_healthy 
+        condition: service_healthy
 
+  # Frontend Nuxt
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile  # <- pastikan file ini ada di folder frontend
     container_name: expense_frontend
     ports:
       - "3000:3000"
     depends_on:
       - backend
-
 volumes:
   postgres_data:

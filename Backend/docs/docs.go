@@ -45,6 +45,15 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.LoginResponse"
                         }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
                     }
                 }
             }
@@ -56,6 +65,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Mengambil daftar pengeluaran. Filter otomatis berdasarkan role user.",
                 "produces": [
                     "application/json"
                 ],
@@ -66,19 +76,21 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Filter status",
+                        "description": "Filter status (pending, approved, rejected)",
                         "name": "status",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Limit",
+                        "default": 10,
+                        "description": "Limit data per halaman",
                         "name": "limit",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "Page",
+                        "default": 1,
+                        "description": "Nomor halaman",
                         "name": "page",
                         "in": "query"
                     }
@@ -87,8 +99,16 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
+                            "$ref": "#/definitions/models.ExpenseListResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
                             "type": "object",
-                            "additionalProperties": true
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -99,6 +119,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Submit pengeluaran baru oleh employee",
                 "consumes": [
                     "application/json"
                 ],
@@ -126,6 +147,69 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Expense"
                         }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unprocessable Entity",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                     }
                 }
             }
@@ -137,6 +221,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Mendapatkan detail pengeluaran berdasarkan ID",
                 "tags": [
                     "expenses"
                 ],
@@ -156,6 +241,27 @@ const docTemplate = `{
                         "schema": {
                             "$ref": "#/definitions/models.Expense"
                         }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                     }
                 }
             }
@@ -167,6 +273,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Menyetujui pengeluaran (Hanya untuk Manager)",
                 "tags": [
                     "expenses"
                 ],
@@ -183,6 +290,48 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                     }
                 }
             }
@@ -194,6 +343,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
+                "description": "Menolak pengeluaran (Hanya untuk Manager)",
                 "tags": [
                     "expenses"
                 ],
@@ -210,28 +360,99 @@ const docTemplate = `{
                 "responses": {
                     "204": {
                         "description": "No Content"
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "allOf": [
+                                    {
+                                        "type": "string"
+                                    },
+                                    {
+                                        "type": "object",
+                                        "properties": {
+                                            "error": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                ]
+                            }
+                        }
                     }
                 }
             }
         }
     },
     "definitions": {
+        "models.Approval": {
+            "type": "object",
+            "properties": {
+                "approver": {
+                    "$ref": "#/definitions/models.User"
+                },
+                "approver_id": {
+                    "type": "integer"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "expense_id": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "notes": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.ExpenseStatus"
+                }
+            }
+        },
         "models.Expense": {
             "type": "object",
             "properties": {
-                "amount_idr": {
-                    "description": "Minimal IDR 10.000 [cite: 24, 63]",
+                "amount": {
                     "type": "integer"
+                },
+                "approvals": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Approval"
+                    }
                 },
                 "auto_approved": {
                     "type": "boolean"
                 },
                 "description": {
-                    "description": "Required field [cite: 26]",
                     "type": "string"
                 },
                 "external_id": {
-                    "description": "Idempotency key [cite: 77]",
                     "type": "string"
                 },
                 "id": {
@@ -253,6 +474,34 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.ExpenseListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.Expense"
+                    }
+                },
+                "meta": {
+                    "$ref": "#/definitions/models.ExpensePaginationMeta"
+                }
+            }
+        },
+        "models.ExpensePaginationMeta": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
                     "type": "integer"
                 }
             }
@@ -298,6 +547,27 @@ const docTemplate = `{
                 },
                 "user_id": {
                     "type": "integer"
+                }
+            }
+        },
+        "models.User": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role": {
+                    "description": "employee, manager",
+                    "type": "string"
                 }
             }
         }
