@@ -1,0 +1,305 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "API untuk tugas teknis Mekari.",
+        "title": "Expense Management API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "paths": {
+        "/api/auth/login": {
+            "post": {
+                "description": "Login untuk mendapatkan token. Gunakan email: employee@mekari.com atau manager@mekari.com",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "User Login",
+                "parameters": [
+                    {
+                        "description": "Credentials",
+                        "name": "login",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.LoginResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/expenses": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Get list of expenses",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Filter status",
+                        "name": "status",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page",
+                        "name": "page",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Submit a new expense",
+                "parameters": [
+                    {
+                        "description": "Expense object",
+                        "name": "expense",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.Expense"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/models.Expense"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/expenses/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Get expense detail",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Expense ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Expense"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/expenses/{id}/approve": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Approve an expense",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Expense ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        },
+        "/api/expenses/{id}/reject": {
+            "put": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "expenses"
+                ],
+                "summary": "Reject an expense",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Expense ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "models.Expense": {
+            "type": "object",
+            "properties": {
+                "amount_idr": {
+                    "description": "Minimal IDR 10.000 [cite: 24, 63]",
+                    "type": "integer"
+                },
+                "auto_approved": {
+                    "type": "boolean"
+                },
+                "description": {
+                    "description": "Required field [cite: 26]",
+                    "type": "string"
+                },
+                "external_id": {
+                    "description": "Idempotency key [cite: 77]",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "processed_at": {
+                    "type": "string"
+                },
+                "receipt_url": {
+                    "type": "string"
+                },
+                "requires_approval": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "$ref": "#/definitions/models.ExpenseStatus"
+                },
+                "submitted_at": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.ExpenseStatus": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "approved",
+                "rejected",
+                "auto_approved",
+                "completed"
+            ],
+            "x-enum-varnames": [
+                "StatusPending",
+                "StatusApproved",
+                "StatusRejected",
+                "StatusAutoApproved",
+                "StatusCompleted"
+            ]
+        },
+        "models.LoginRequest": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "user@example.com"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "password123"
+                }
+            }
+        },
+        "models.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Masukkan token dengan format: Bearer \u003ctoken\u003e",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

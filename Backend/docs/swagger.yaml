@@ -1,0 +1,197 @@
+definitions:
+  models.Expense:
+    properties:
+      amount_idr:
+        description: 'Minimal IDR 10.000 [cite: 24, 63]'
+        type: integer
+      auto_approved:
+        type: boolean
+      description:
+        description: 'Required field [cite: 26]'
+        type: string
+      external_id:
+        description: 'Idempotency key [cite: 77]'
+        type: string
+      id:
+        type: integer
+      processed_at:
+        type: string
+      receipt_url:
+        type: string
+      requires_approval:
+        type: boolean
+      status:
+        $ref: '#/definitions/models.ExpenseStatus'
+      submitted_at:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  models.ExpenseStatus:
+    enum:
+    - pending
+    - approved
+    - rejected
+    - auto_approved
+    - completed
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusApproved
+    - StatusRejected
+    - StatusAutoApproved
+    - StatusCompleted
+  models.LoginRequest:
+    properties:
+      email:
+        example: user@example.com
+        type: string
+      password:
+        example: password123
+        type: string
+    type: object
+  models.LoginResponse:
+    properties:
+      role:
+        type: string
+      token:
+        type: string
+      user_id:
+        type: integer
+    type: object
+info:
+  contact: {}
+  description: API untuk tugas teknis Mekari.
+  title: Expense Management API
+  version: "1.0"
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: 'Login untuk mendapatkan token. Gunakan email: employee@mekari.com
+        atau manager@mekari.com'
+      parameters:
+      - description: Credentials
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+      summary: User Login
+      tags:
+      - auth
+  /api/expenses:
+    get:
+      parameters:
+      - description: Filter status
+        in: query
+        name: status
+        type: string
+      - description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Page
+        in: query
+        name: page
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get list of expenses
+      tags:
+      - expenses
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Expense object
+        in: body
+        name: expense
+        required: true
+        schema:
+          $ref: '#/definitions/models.Expense'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.Expense'
+      security:
+      - BearerAuth: []
+      summary: Submit a new expense
+      tags:
+      - expenses
+  /api/expenses/{id}:
+    get:
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Expense'
+      security:
+      - BearerAuth: []
+      summary: Get expense detail
+      tags:
+      - expenses
+  /api/expenses/{id}/approve:
+    put:
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Approve an expense
+      tags:
+      - expenses
+  /api/expenses/{id}/reject:
+    put:
+      parameters:
+      - description: Expense ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+      security:
+      - BearerAuth: []
+      summary: Reject an expense
+      tags:
+      - expenses
+securityDefinitions:
+  BearerAuth:
+    description: 'Masukkan token dengan format: Bearer <token>'
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

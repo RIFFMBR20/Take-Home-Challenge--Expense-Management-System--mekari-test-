@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  # Database PostgreSQL
+  db:
+    image: postgres:15-alpine
+    container_name: expense_db_container
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-expense_management}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-expense_management}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # Backend Golang
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile # Pastikan path ke Dockerfile benar
+    container_name: expense_backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_NAME: ${DB_NAME:-expense_management}
+      DB_SSLMODE: disable
+      DB_TIMEZONE: Asia/Jakarta
+    depends_on:
+      db:
+        condition: service_healthy # Backend hanya jalan setelah DB sehat
+
+  # Frontend Nuxt.js (Comment dulu jika folder belum ada agar tidak error saat up)
+  # frontend:
+  #   build: ./frontend
+  #   container_name: expense_frontend
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     - backend
+
+volumes:
+  postgres_data:
