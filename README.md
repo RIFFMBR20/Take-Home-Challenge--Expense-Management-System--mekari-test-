@@ -41,8 +41,8 @@ Pastikan server berjalan di http://localhost:8080.
 ### 2. Frontend (Nuxt 3)
 Masuk ke folder frontend, lalu jalankan perintah berikut:
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 Aplikasi akan tersedia di http://localhost:3000.

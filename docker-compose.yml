@@ -44,8 +44,10 @@ services:
       dockerfile: Dockerfile
     container_name: expense_frontend
     ports:
-      - "3000:3000"
+      - "3000:3000"    # Mengubah port ke 3000:3000
     depends_on:
       - backend
+    environment:
+      PORT: 3000
 volumes:
   postgres_data:
